@@ -6,6 +6,12 @@ public struct PlacedTopic: Identifiable, Equatable, Sendable {
     public let depth: Int
     public let color: BranchColor
     public let left: Bool
+    public let hasHiddenChildren: Bool
+
+    public var foldBadgeFrame: CGRect? {
+        guard hasHiddenChildren else { return nil }
+        return CGRect(x: left ? frame.minX - 7 : frame.maxX - 7, y: frame.midY - 7, width: 14, height: 14)
+    }
 }
 
 public struct MapEdge: Equatable, Sendable {
@@ -22,6 +28,10 @@ public struct MapGeometry: Equatable, Sendable {
     public var size: CGSize
     public func topic(_ id: UUID) -> PlacedTopic? { topics.first { $0.id == id } }
     public func hitTest(_ point: CGPoint) -> UUID? { topics.last { $0.frame.contains(point) }?.id }
+    /// Uses layout metadata only; never searches the document tree for each placed node.
+    public func foldBadgeHitTest(_ point: CGPoint) -> UUID? {
+        topics.last { $0.foldBadgeFrame?.insetBy(dx: -1, dy: -1).contains(point) == true }?.id
+    }
 }
 
 public enum MapLayoutEngine {
@@ -42,7 +52,8 @@ public enum MapLayoutEngine {
         _ = prepare(map.root, root: true)
         let rootSize = sizes[map.root.id]!
         let rootFrame = CGRect(x: -rootSize.width / 2, y: -rootSize.height / 2, width: rootSize.width, height: rootSize.height)
-        var nodes = [PlacedTopic(id: map.root.id, frame: rootFrame, depth: 0, color: .blue, left: false)]
+        var nodes = [PlacedTopic(id: map.root.id, frame: rootFrame, depth: 0, color: .blue, left: false,
+                                hasHiddenChildren: map.root.isCollapsed && !map.root.children.isEmpty)]
         var edges: [MapEdge] = []
         func connect(_ parent: CGRect, _ child: CGRect, left: Bool, color: BranchColor, rootPort: CGFloat? = nil) {
             let start = CGPoint(x: left ? parent.minX : parent.maxX, y: rootPort ?? parent.midY)
@@ -57,7 +68,8 @@ public enum MapLayoutEngine {
             let size = sizes[topic.id]!, height = heights[topic.id]!
             let frame = CGRect(x: left ? parent.minX - gap - size.width : parent.maxX + gap,
                                y: top + (height - size.height) / 2, width: size.width, height: size.height)
-            nodes.append(PlacedTopic(id: topic.id, frame: frame, depth: depth, color: color, left: left))
+            nodes.append(PlacedTopic(id: topic.id, frame: frame, depth: depth, color: color, left: left,
+                                     hasHiddenChildren: topic.isCollapsed && !topic.children.isEmpty))
             connect(parent, frame, left: left, color: color, rootPort: rootPort)
             guard !topic.isCollapsed else { return }
             let total = topic.children.reduce(CGFloat.zero) { $0 + heights[$1.id]! } + CGFloat(max(0, topic.children.count - 1)) * spacing

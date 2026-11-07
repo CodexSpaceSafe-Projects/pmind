@@ -105,13 +105,8 @@ final class MapCanvasView: NSView, NSTextFieldDelegate, TitleEditing {
         panning = spaceHeld || event.buttonNumber == 2
         pressedID = panning ? nil : geometry.hitTest(pressPoint)
         dragging = false; drop = nil
-        if !panning, let folded = geometry.topics.first(where: { node in
-            guard map.root.topic(node.id)?.isCollapsed == true else { return false }
-            let badge = CGRect(x: node.left ? node.frame.minX - 8 : node.frame.maxX - 8,
-                               y: node.frame.midY - 8, width: 16, height: 16)
-            return badge.contains(pressPoint)
-        }) {
-            session?.select(folded.id); session?.fold(); pressedID = nil
+        if !panning, let folded = geometry.foldBadgeHitTest(pressPoint) {
+            session?.select(folded); session?.fold(); pressedID = nil
             return
         }
         if let id = pressedID {

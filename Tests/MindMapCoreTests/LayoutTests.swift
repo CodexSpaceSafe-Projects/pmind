@@ -54,4 +54,39 @@ struct LayoutTests {
         #expect(geometry.hitTest(CGPoint(x: root.frame.midX, y: root.frame.midY)) == map.root.id)
         #expect(geometry.hitTest(CGPoint(x: -1, y: -1)) == nil)
     }
+
+    @Test func foldBadgesFollowVisibleNodesAndShiftWithTheirFrames() throws {
+        let hidden = Topic(title: "hidden", isCollapsed: true, children: [Topic(title: "leaf")])
+        let right = Topic(title: "right", isCollapsed: true, children: [hidden])
+        let left = Topic(title: "left", isCollapsed: true, children: [Topic(title: "leaf")])
+        let empty = Topic(title: "empty", isCollapsed: true)
+        var map = MindMap(root: Topic(title: "root", children: [right, left, empty]))
+        let geometry = MapLayoutEngine.layout(map, measure: measure)
+        #expect(geometry.topic(hidden.id) == nil)
+        #expect(geometry.topic(empty.id)?.foldBadgeFrame == nil)
+        #expect(geometry.topic(map.root.id)?.foldBadgeFrame == nil)
+
+        for id in [right.id, left.id] {
+            let badge = try #require(geometry.topic(id)?.foldBadgeFrame)
+            #expect(geometry.foldBadgeHitTest(CGPoint(x: badge.midX, y: badge.midY)) == id)
+            var shifted = geometry
+            for index in shifted.topics.indices {
+                shifted.topics[index].frame = shifted.topics[index].frame.offsetBy(dx: 4000, dy: 4000)
+            }
+            #expect(shifted.foldBadgeHitTest(CGPoint(x: badge.midX + 4000, y: badge.midY + 4000)) == id)
+        }
+
+        try map.apply(.toggleFold(right.id))
+        let expanded = MapLayoutEngine.layout(map, measure: measure)
+        #expect(expanded.topic(right.id)?.foldBadgeFrame == nil)
+        #expect(expanded.topic(hidden.id)?.foldBadgeFrame != nil)
+    }
+
+    @Test func emptyFoldBadgeHitTestingHandlesTenThousandVisibleTopics() {
+        let map = MindMap(root: Topic(title: "root", children: (0..<9_999).map { Topic(title: "\($0)") }))
+        let geometry = MapLayoutEngine.layout(map, measure: measure)
+        #expect(geometry.topics.count == 10_000)
+        #expect(geometry.foldBadgeHitTest(.zero) == nil)
+        #expect(geometry.foldBadgeHitTest(CGPoint(x: geometry.size.width, y: geometry.size.height)) == nil)
+    }
 }

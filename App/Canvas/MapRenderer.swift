@@ -82,9 +82,7 @@ enum MapRenderer {
             let content = node.frame.insetBy(dx: 18, dy: 12)
             (topic.title as NSString).draw(with: content, options: [.usesLineFragmentOrigin, .usesFontLeading],
                                             attributes: attributes(root: root))
-            if topic.isCollapsed && !topic.children.isEmpty {
-                let badge = CGRect(x: node.left ? node.frame.minX - 7 : node.frame.maxX - 7,
-                                   y: node.frame.midY - 7, width: 14, height: 14)
+            if let badge = node.foldBadgeFrame {
                 NSColor.textBackgroundColor.setFill(); NSBezierPath(ovalIn: badge).fill()
                 node.color.nsColor.setStroke(); NSBezierPath(ovalIn: badge).stroke()
                 let plus = NSBezierPath()
