@@ -39,7 +39,8 @@ public enum DocumentCodec {
     public static func encode(_ map: MindMap) throws -> Data {
         try validate(map)
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        // Whitespace must not make a compact, valid document impossible to save.
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(Envelope(format: "pmind", version: 1, root: map.root, layout: map.layout))
         guard data.count <= maxBytes else { throw MapError.tooLarge }
         return data
@@ -54,7 +55,8 @@ public enum DocumentCodec {
         guard version == 1 else { throw MapError.unsupportedVersion(version) }
         let envelope = try JSONDecoder().decode(Envelope.self, from: data)
         let map = MindMap(root: envelope.root, layout: envelope.layout)
-        try validate(map)
+        // Opening establishes the same size and tree invariants as saving/editing.
+        _ = try encode(map)
         return map
     }
 }

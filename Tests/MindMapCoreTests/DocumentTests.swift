@@ -13,6 +13,29 @@ struct DocumentTests {
         #expect(try DocumentCodec.decode(DocumentCodec.encode(map)) == map)
     }
 
+    @Test func compactDeepDocumentRemainsSaveableAndEditable() throws {
+        var root = Topic(title: "branch", children: (0..<7_000).map { Topic(title: "\($0)") })
+        for _ in 0..<110 { root = Topic(title: "parent", children: [root]) }
+        let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(root))
+        let input = try JSONSerialization.data(withJSONObject: [
+            "format": "pmind", "version": 1, "layout": "mindMap", "root": object,
+        ])
+        #expect(input.count < DocumentCodec.maxBytes)
+        var map = try DocumentCodec.decode(input)
+        #expect(map.root.count == 7_111)
+        let saved = try DocumentCodec.encode(map)
+        #expect(try DocumentCodec.decode(saved) == map)
+        #expect(try map.apply(.rename(map.root.id, "updated")) != nil)
+        #expect(map.root.title == "updated")
+    }
+
+    @Test func existingIndentedDocumentsPreserveTheirContents() throws {
+        let map = MindMap.welcome
+        let object = try JSONSerialization.jsonObject(with: DocumentCodec.encode(map))
+        let input = try JSONSerialization.data(withJSONObject: object, options: .prettyPrinted)
+        #expect(try DocumentCodec.decode(input) == map)
+    }
+
     @Test func rejectsNewVersionBeforeBodyDecode() throws {
         let data = Data(#"{"format":"pmind","version":99,"root":"unknown schema"}"#.utf8)
         #expect(throws: MapError.unsupportedVersion(99)) { try DocumentCodec.decode(data) }
