@@ -1,27 +1,13 @@
 {
-  "name": "wmind",
-  "version": "1.0.0",
+  "name": "pmind-maintenance",
   "private": true,
-  "description": "wmind — 可自托管的思维导图系统",
-  "license": "MIT",
   "type": "module",
-  "engines": {
-    "node": ">=22.18"
-  },
+  "description": "Optional note validation tools; the native app uses SwiftPM only",
+  "engines": { "node": ">=22.18" },
   "scripts": {
-    "version:next": "node scripts/release.mjs bump",
-    "version:check": "node scripts/release.mjs check",
-    "test:release": "node --test scripts/release*.test.mjs deploy/*.test.mjs",
     "verify-agent-note-tree": "node --experimental-strip-types .agents/skills/write-notes-like-deepseek/scripts/verify-agent-note-tree.ts",
     "verify-agent-note-format": "node --experimental-strip-types .agents/skills/write-notes-like-deepseek/scripts/verify-agent-note-format.ts",
     "verify-archived": "node --experimental-strip-types .agents/skills/write-notes-like-deepseek/scripts/verify-archived-agent-notes.ts",
-    "verify-notes": "npm run verify-agent-note-tree && npm run verify-agent-note-format && npm run verify-archived",
-    "check:palette": "node scripts/check-palette-contrast.mjs",
-    "check:fonts": "node scripts/check-fonts.mjs",
-    "fonts:fetch": "node scripts/fetch-fonts.mjs",
-    "archive-agent-note": "node --experimental-strip-types .agents/skills/write-notes-like-deepseek/scripts/archive-agent-note.ts",
-    "check-anchors": "node --experimental-strip-types .agents/skills/write-notes-like-deepseek/scripts/check-note-anchors.ts",
-    "init-board": "node --experimental-strip-types .agents/skills/write-notes-like-deepseek/scripts/build-board.ts --init board.html \"wmind 决策看板\"",
-    "fonts:coverage": "node scripts/gen-font-coverage.mjs"
+    "verify-notes": "npm run verify-agent-note-tree && npm run verify-agent-note-format && npm run verify-archived"
   }
 }

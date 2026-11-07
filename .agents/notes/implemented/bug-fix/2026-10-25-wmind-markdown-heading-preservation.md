@@ -2,6 +2,8 @@
 
 Status: implemented
 
+> 历史适用范围：本文记录旧 Web 实现，仅保留可复用的树约束、布局和文本导入理由；当前 Swift 实现以[原生架构](../architecture/2026-11-07-pmind-native-macos.md)为准。
+
 ## Problem
 
 二手车综合业务需求使用一个文档标题、九个二级模块、三级小节和大量两层列表。既有 `headingCount >= 2 && headingCount >= listCount / 2` 将列表多的文档判成列表模式，再把所有标题改成正文备注。结果导入成功但九个主分支和小节消失。原始文本正则计数还把围栏里的 `#` 算作标题，与真正分词结果不一致。
@@ -15,8 +17,8 @@ Status: implemented
 ## Related notes
 
 - [原 Markdown / OPML 导入](../architecture/2026-10-20-wmind-markdown-opml-import.md)部分重叠。本篇替代数量公式，保留其分词、缩进栈、行内转换与 XML 安全理由。
-- [文本导出](../architecture/2026-10-20-wmind-export-text.md)部分重叠。保留两级标题加无限列表的输出格式及行首转义，只撤销其依赖数量公式的安全假设；大量列表往返加入回归。
-- [导入框架](../architecture/2026-10-20-wmind-import-framework.md)、[导入对话框](../architecture/2026-10-20-wmind-import-dialog.md)、[批量导入](../feature/2026-10-24-wmind-batch-import.md)分别负责安全闸门、确认入口和队列，不改变这些决定。检索活跃 proposed / implemented / rejected 后，其余格式转换和文档格式提案只共享关键词，无同主题旧提案需要删除或归档。
+- [文本导出](../../archived/architecture/2026-10-20-wmind-export-text.md)部分重叠。保留两级标题加无限列表的输出格式及行首转义，只撤销其依赖数量公式的安全假设；大量列表往返加入回归。
+- [导入框架](../../archived/architecture/2026-10-20-wmind-import-framework.md)、[导入对话框](../../archived/architecture/2026-10-20-wmind-import-dialog.md)、[批量导入](../../archived/feature/2026-10-24-wmind-batch-import.md)分别负责安全闸门、确认入口和队列，不改变这些决定。检索活跃 proposed / implemented / rejected 后，其余格式转换和文档格式提案只共享关键词，无同主题旧提案需要删除或归档。
 
 ## Alternatives considered
 

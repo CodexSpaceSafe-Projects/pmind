@@ -1,94 +1,44 @@
-# 开发与发布
+# 开发说明
 
-本地启动与部署入口见[项目 README](../README.md#快速开始)，完整设计文档见[文档索引](./README.md)。以下命令默认在仓库根目录执行。
+## 工程
 
-## 版本与发布
+根目录 `Package.swift` 是唯一构建入口，不需要 XcodeGen、CocoaPods 或外部 Swift 包。
 
-正式版本以根目录 [VERSION](../VERSION) 为准，个人设置入口右侧显示正在运行的后端版本；直接 `go run` 的开发服务显示 `dev`。部署时在 `deploy/.env` 设置 `WMIND_VERSION=v1.0.0` 可固定版本；留为 `latest` 则拉取最新正式镜像。源码本地构建使用 `docker compose up -d --build`。
+| 目录 | 职责 |
+| --- | --- |
+| `Sources/MindMapCore` | 主题树、事务命令、文件格式、Markdown、布局几何 |
+| `App/Application` | SwiftUI 文档场景、菜单、应用生命周期 |
+| `App/Documents` | FileDocument、每窗口编辑会话、系统撤销桥接 |
+| `App/Canvas` | NSViewRepresentable、绘制、键盘、文本输入、拖拽和缩放 |
+| `App/Views` | 窗口布局、大纲、搜索、主题详情 |
+| `App/Support` | Markdown/图片/PDF 导出 |
+| `Tests/MindMapCoreTests` | 可在 Linux/macOS 运行的内核回归 |
+| `Tests/PMindAppTests` | 仅 macOS 的会话、撤销、多窗口隔离和文本测量测试 |
+| `Resources/Info.plist` | 应用 Bundle 和文档类型声明 |
+| `script/build_and_run.sh` | 构建、开发签名、启动与调试的唯一入口 |
 
-普通提交和 PR 不触发 CI，推送 `v*` 标签才执行完整校验、构建并发布 GitHub Release。发布页包含按版本整理的更新日志、Linux amd64/arm64 部署压缩包、SHA256SUMS，以及对应的 GHCR API/Web 多架构镜像。压缩包只包含二进制、静态前端、示例配置与部署脚本，使用方式见包内 RELEASE.md；解压前可执行 `sha256sum -c SHA256SUMS` 校验。
+## 模型和修改
 
-```bash
-npm run version:next          # 同步 VERSION 和两个 package.json，不自动提交或打标签
-npm run version:check -- v1.0.1
-# 整理并审阅 changelogs/v1.0.1.md 后校验输出：
-node scripts/release.mjs changelog v1.0.1 release/CHANGELOG.md
-npm run test:release
-# 提交本次版本变更并通过相关本地检查后：
-git tag -a v1.0.1 -m "wmind v1.0.1"
-git push origin main v1.0.1
-```
+每个主题包含稳定 UUID、标题、备注、折叠状态、可选分支颜色及有序子主题。`MapCommand` 在副本上修改并校验，成功才替换原文档；无效移动、根删除和其他空操作不产生历史。原生层通过 `EditorSession` 调用命令并注册 `UndoManager` 的反向快照。不要在视图里另维护一份可写导图。
 
-版本按十进制进位：`1.0.8 → 1.0.9 → 1.1.0`，`1.9.9 → 2.0.0`。只有所有校验、压缩包和镜像都成功后才创建正式 Release；失败时修复问题并跟进流水线，不把仅创建标签当成已发布。
+`FileDocument` 的绑定保存持久数据，窗口会话只保存选区、搜索、缩放和编辑请求。打开两个窗口时会话与撤销记录隔离。编辑框使用 AppKit 字段编辑器处理中文输入法与原生删除/复制；保存和导出命令先结束当前文字编辑。
 
-### 更新日志整理
+布局接收文本测量函数，输出节点矩形及贝塞尔路径。画布和导出复用这份几何。生产文本通过系统字体实际测量；Linux 布局测试注入固定测量器，不宣称像素与 Mac 一致。PNG 以 2 倍像素输出，限制边长 16384 像素及总像素 6400 万；大型导图可使用 PDF 或折叠分支。
 
-每个版本维护 `changelogs/vX.Y.Z.md`，格式参见 [v1.0.0](../changelogs/v1.0.0.md)。标题为 `# vX.Y.Z`，仅使用「新增功能 / 问题修复 / 性能改进」二级标题，条目用单行 `- 文案`，无内容的分类不写。
+## 文件格式
 
-发布前结合提交历史和实际代码，按功能归并多次实现与修复，改写为最终用户可见效果。文档、测试、CI、构建、维护和已被替代的中间方案不进入正式日志，不附提交哈希。首发概括完整已交付能力；新版本只写相对前一版的增量；同版本重发更新同一份完整摘要，不追加本轮提交。
+`.pmind` 是 UTF-8 JSON，顶层为 `format: "pmind"`、`version: 1`、`layout` 和 `root`。保存时保留全部后代，包括折叠主题；拒绝重复标识、超过 128 层、10000 个主题或 8 MiB 的文档。不支持的版本在解析主体前报错，不打开后覆盖。
 
-CI 在依赖安装和构建前校验整理稿；缺稿、版本错误、未知或空分类、完全重复的条目、占位和原样提交记录会阻止发布，不回退到 Git 历史，也不调用站点 AI。语义重复和描述准确性仍须发布前审阅，脚本校验不能替代整理。发布页、日志附件和包内 CHANGELOG.md 共用生成结果，打包前还会拒绝过期日志。
+Markdown 是文本交换格式，不保存 UUID、颜色、折叠或布局。支持真实标题层级、有序/无序列表、引用备注、代码围栏；不是通用 Markdown 富文本渲染器。导出用一级标题表示中心主题，用缩进列表表示后代，标题换行用 `<br>` 表达。
 
-仅调整现有 Release 页面正文时，不移动版本标签或替换附件；旧包内日志保持原样，待下次正式发布再统一更新，避免破坏已发布校验和。
+## 构建与测试
 
-## 常用命令
+Mac：`swift test`，然后 `./script/build_and_run.sh --verify`。`--verify` 只验证进程存在，交互仍按验收清单检查。`--debug` 在 LLDB 中运行应用二进制；`--logs` 观察进程日志；`--telemetry` 过滤 `app.pmind.mac` 子系统。日志不记录标题、备注或文件内容。
 
-```bash
-make help            # 列出全部命令
-make dev-backend     # 本地启动后端
-make dev-frontend    # 本地启动前端
-make test            # 后端全部测试（SQLite，不需要 Docker）
-make test-frontend   # 前端类型检查 + 单测 + 生产构建
-make lint            # go vet + gofmt
-make verify-notes    # 校验架构决策笔记
-make verify-dialect  # 迁移 parity + 方言分层检查
-```
+Linux 云环境：运行 `./script/setup_linux.sh` 安装经过发布签名验证的 Swift 6.1.3，再运行 `./script/test.sh`。脚本使用 `/workspace/.pmind-native-tools`，可通过 `PMIND_TOOLS_DIR` 指定其他可写目录。工具链没有系统安装步骤。应用目标和原生测试目标在 Linux 不注册，因此测试通过只说明内核通过。测试脚本将 Swift/Clang 缓存指向工具目录，无需改变 HOME。
 
-界面验收（需要后端与前端都起着，见 [`frontend/e2e/README.md`](../frontend/e2e/README.md)）：
+笔记校验工具是独立的维护工具，需要 Node 22.18+，运行 `npm run verify-notes`；产品本身不需要 Node。
 
-```bash
-cd frontend && npm run e2e
-```
+## 分发
 
-## 目录结构
-
-```text
-wmind/
-├── backend/                  Go 后端（模块 github.com/woliubang256/wmind/backend）
-│   ├── cmd/server/           入口：装配依赖、启动、优雅退出
-│   ├── internal/
-│   │   ├── config/           配置加载与校验
-│   │   ├── httpapi/          路由、中间件、统一响应信封
-│   │   ├── handler/          请求解析与响应组装（不含业务规则）
-│   │   ├── service/          业务规则与事务边界（方言无关）
-│   │   ├── repository/       postgres/ 与 sqlite/ 两套方言实现
-│   │   ├── domain/           领域模型与仓储接口（方言无关）
-│   │   ├── docmodel/         .wmind 文档模型
-│   │   ├── convert/          导入导出适配器
-│   │   └── pkg/              apperr / logger / id / reqid 等通用件
-│   └── db/                   两套迁移集、sqlc 配置与查询
-├── frontend/                 React 前端（Vite + TypeScript + Tailwind v4，自建 UI 组件）
-│   └── e2e/                  界面验收脚本，见 e2e/README.md
-├── deploy/                   Compose、Dockerfile、Nginx 配置
-├── docs/                     需求、架构、接口、部署文档
-└── .agents/                  架构决策笔记与校验脚本
-```
-
-## 两个数据库方言
-
-由 `WMIND_DB_DRIVER` 选择（`sqlite` 默认 / `postgres`）。**业务代码对两者完全无感**——
-service 与 handler 层只依赖 `domain` 中的接口，唯一的方言分叉在 `cmd/server` 的装配处，
-由静态检查兜底。详见 [09-技术决策记录](./09-技术决策记录.md) 的 ADR-015。
-
-两条容易踩的边界：
-
-- **SQLite 只能单实例运行**，且数据库文件必须放在本地块设备卷上（不支持 NFS / 云盘）。
-- **切换驱动不会搬运数据**。改 `WMIND_DB_DRIVER` 只是换了连接目标，既有数据仍留在原库；
-  跨方言迁移需逐图导出 `.wmind` 手工完成，工具在二期。
-
-## 开发约定
-
-- 提交信息遵循 Conventional Commits，冒号后用中文一句话说明，如 `feat(editor): 支持拖拽调整分支顺序`。
-- 非平凡改动（行为、架构、跨文件契约、工具链、测试策略、落盘格式）必须同批提交一篇
-  架构决策笔记到 `.agents/notes/`，规则见 [`.agents/skills/write-notes-like-deepseek/SKILL.md`](../.agents/skills/write-notes-like-deepseek/SKILL.md)。
-- 提交前跑 `make verify-notes` 与 `make test`。
+当前脚本生成本机架构的开发构建。Apple Silicon 和 Intel 需分别在对应 Mac 构建。对外发布需另外设置 Developer ID 签名、hardened runtime、公证和安装包流程；不要把 ad-hoc 开发签名作为正式分发就绪证明。

@@ -1,5 +1,0 @@
-CREATE TABLE user_two_factor (
-    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    state TEXT NOT NULL DEFAULT '{}',
-    revision INTEGER NOT NULL DEFAULT 0
-);

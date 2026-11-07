@@ -1,0 +1,79 @@
+{
+  "format": "pmind",
+  "version": 1,
+  "layout": "mindMap",
+  "root": {
+    "id": "75038032-b2bb-43aa-9fc6-c551e755d5ce",
+    "title": "开始整理想法",
+    "notes": "",
+    "isCollapsed": false,
+    "children": [
+      {
+        "id": "b7e872ce-eb2b-438e-b692-468dac03832b",
+        "title": "收集",
+        "notes": "",
+        "isCollapsed": false,
+        "children": [
+          {
+            "id": "cbb3e025-9dc5-4a44-89ca-91fbde4aa2d2",
+            "title": "记录灵感",
+            "notes": "",
+            "isCollapsed": false,
+            "children": []
+          },
+          {
+            "id": "89b49022-6712-42a6-aa41-3a7bbe73db89",
+            "title": "补充备注",
+            "notes": "在主题详情中编辑纯文本备注。",
+            "isCollapsed": false,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "c5aaa9e7-09bd-40b8-abf4-fd9e2c2e3255",
+        "title": "梳理",
+        "notes": "",
+        "isCollapsed": false,
+        "children": [
+          {
+            "id": "05c19e49-97a1-4657-aba4-5d65d14cf668",
+            "title": "建立层级",
+            "notes": "",
+            "isCollapsed": false,
+            "children": []
+          },
+          {
+            "id": "a1e2a893-5d2b-420f-856a-ac1d78fa0353",
+            "title": "拖拽排序",
+            "notes": "",
+            "isCollapsed": false,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "595d6fc5-487b-4ab0-923f-406373bb6eaf",
+        "title": "分享成果",
+        "notes": "",
+        "isCollapsed": false,
+        "children": [
+          {
+            "id": "416d0b26-7b89-4c19-8867-c48b6b72f01f",
+            "title": "导出 Markdown",
+            "notes": "",
+            "isCollapsed": false,
+            "children": []
+          },
+          {
+            "id": "d1b318e6-0d0a-4f67-914b-a6d454d809f9",
+            "title": "导出图片或 PDF",
+            "notes": "",
+            "isCollapsed": false,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

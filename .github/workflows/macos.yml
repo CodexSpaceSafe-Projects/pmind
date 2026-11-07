@@ -1,0 +1,32 @@
+name: macOS
+on:
+  push:
+  pull_request:
+jobs:
+  native:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version
+      - name: Core and native session tests
+        run: swift test
+      - name: Build development app bundle
+        run: ./script/build_and_run.sh --build-only
+      - name: Validate bundle metadata and signature
+        run: |
+          plutil -lint dist/pmind.app/Contents/Info.plist
+          codesign --verify --strict dist/pmind.app
+          test -x dist/pmind.app/Contents/MacOS/pmind
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pmind-macos-development
+          path: dist/pmind.app
+  notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm run verify-notes

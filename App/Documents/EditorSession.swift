@@ -49,6 +49,7 @@ final class EditorSession: ObservableObject {
         undoManager?.setActionName(label)
         objectWillChange.send()
         file.wrappedValue.map = map
+        editingRequest = nil
         self.selection = map.root.topic(selection) == nil ? map.root.id : selection
     }
 

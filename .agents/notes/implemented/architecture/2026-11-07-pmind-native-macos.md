@@ -57,7 +57,7 @@ Status: implemented
 按原生技术、文档、布局、内核和导入导出检索了 proposed、implemented 和 rejected。尚无原生 Swift/macOS 方案，本次是架构方向变更，不能原地改写 Web 架构的决定。
 
 - [编辑器内核](../../implemented/architecture/2026-10-18-wmind-editor-kernel-model.md)、[文本测量与布局](../../implemented/architecture/2026-10-18-wmind-editor-measure-layout.md)、[布局结构](../../implemented/architecture/2026-10-18-wmind-layout-structures.md)：部分重叠，保留命令、空操作、独立编辑会话、稳定布局和共享几何等理由；Swift 的实现不沿用 TS 状态库。
-- [服务端持久化](../../implemented/architecture/2026-10-18-wmind-map-persistence.md)：服务端鉴权、乐观锁与数据库部分在原生实现落地后退出；文件原子保存、格式错误处理改由本地文档体系承担。
+- [服务端持久化](../../archived/architecture/2026-10-18-wmind-map-persistence.md)：服务端鉴权、乐观锁与数据库部分在原生实现落地后退出；文件原子保存、格式错误处理改由本地文档体系承担。
 - [Markdown/OPML 导入](../../implemented/architecture/2026-10-20-wmind-markdown-opml-import.md)和[混合标题保留修复](../../implemented/bug-fix/2026-10-25-wmind-markdown-heading-preservation.md)：Markdown 部分重叠；保留标题/列表层级、代码围栏和转义处理的回归理由；OPML 不纳入首版。
 - 网站后台、安全、分享、部署和附件相关笔记归属旧产品，其实现已经退出当前工程；被完全取代的笔记保留为带哈希封印的历史归档，仍有跨平台参考价值的内核/布局/Markdown 笔记保留并注明适用边界，旧提案转为 rejected。
 
@@ -92,3 +92,5 @@ Status: implemented
 Swift 6.1.3 Linux 工具链通过 Swift 官方仓库公钥及发布签名验证。`swift build` 和 24 项内核测试通过，覆盖文件往返、格式/资源限制、命令事务、无效移动、空操作、Markdown 和两种布局各 1001 个节点的不重叠检查。App 源码通过 Swift 语法解析，构建脚本通过 Bash 语法检查，并在 Linux 明确拒绝运行 GUI。
 
 macOS 应用目标、4 项原生会话/撤销/测量测试、系统保存、界面交互、图片/PDF 实际观感及 .app 启动在本机未执行；macOS CI 与人工验收文档提供执行入口，不能据此视为已通过。SwiftUI/AppKit 桥接和系统文档行为仍是主要验证风险。
+
+旧 Web 构建与 982 个跟踪文件退出当前入口，旧本地忽略文件保留。120 篇被取代的 implemented 笔记通过原归档工具冻结并记录哈希，11 篇旧提案转为 rejected；当前 18 篇活跃笔记及全部封印通过校验。云环境 install_script/start_skill 草稿已改为 Swift 工作流，并移除仅为旧 Go 模块下载申请的自定义 storage.googleapis.com 域名；保存不代表已发布或已在新任务恢复。

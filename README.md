@@ -1,114 +1,46 @@
-# wmind
+# pmind
 
-可自托管的在线思维导图工具，用于整理知识、梳理项目和分享想法。支持 Docker Compose 部署，数据由自己掌握。
+轻量、离线的 macOS 原生思维导图。用 Swift、SwiftUI 和 AppKit 构建，文档直接保存在你的 Mac 上，无需账号、服务器或数据库。
 
-[快速部署](#部署) · [使用手册](./docs/10-用户使用手册.md) · [部署指南](./docs/07-部署与运维.md) · [开发文档](./docs/README.md)
+## 核心功能
 
-## 主要功能
+- 主题创建、改名、删除、子树复制粘贴、拖拽调整父级与顺序。
+- 左右思维导图和向右逻辑图；折叠、触控板平移缩放、适应窗口与中心定位。
+- 同步大纲、标题和备注搜索、纯文本备注、分支配色。
+- 系统文档窗口、本地 `.pmind` 文件、自动保存、撤销重做。
+- Markdown 导入/导出，PNG 和 PDF 导出。
 
-- **导图编辑**：快捷键、拖拽、撤销重做与自动保存，支持概要、边界、联系线、备注、标签和附件。
-- **布局与外观**：9 种布局结构、19 套内置配色和自定义主题，支持浅色 / 深色模式与中英文切换。
-- **多画布与大纲**：一份文档管理多个画布，随时切换大纲视图，支持 ZEN 专注模式与模板复用。
-- **导入与导出**：导入 XMind / Markdown / OPML，导出 JPEG / PNG / SVG / PDF / XMind / Markdown / OPML，也可保存为 `.wmind` 文档。
-- **AI 生成**：组合文字、TXT/Markdown 等文本文件、Word、Excel、PDF 和图片生成可编辑导图，支持多文件拖拽上传。
-- **链接分享**：设置有效期、访问密码、下载与备注权限，访客可缩放画布、折叠和展开节点。
-- **私有部署与管理**：支持 SQLite / PostgreSQL、用户管理与双因素认证，提供 S3 / WebDAV 备份恢复、定时备份、保留份数和可选去重。
+## 在 Mac 上运行
 
-PDF 导出为单页图片，文字不可选中。
-
-AI 功能默认关闭，在「网站设置 → AI」配置 OpenAI 兼容 Provider 的 Base URL、API Key、Model 并启用；思考等级可选，默认不传。支持常见文本文件、`.docx`、`.xlsx`，图片与扫描 PDF 需要视觉模型；素材会发送给所配置的 Provider。详细说明见[使用手册](./docs/10-用户使用手册.md#ai-生成)。
-
-## 界面预览
-
-### 导图编辑
-
-![wmind 编辑器：产品规划导图、配色面板与多画布](./docs/screenshots/editor.png)
-
-### 链接分享
-
-![wmind 分享页：只读导图、画布切换与缩放控件](./docs/screenshots/share.png)
-
-## 技术栈
-
-| 模块 | 技术 |
-| --- | --- |
-| 后端 | Go 1.26 + Gin，模块化单体 |
-| 前端 | React + TypeScript + Vite + Tailwind CSS v4，纯 SPA |
-| 编辑器 | 自研 SVG 渲染与布局引擎 |
-| 数据库 | SQLite（默认）/ PostgreSQL |
-| 部署 | Docker Compose，支持 amd64 / arm64 |
-
-## 快速开始
-
-### 后端（本地开发，不需要 Docker）
-
-默认使用 SQLite——数据库就是一个文件，**不需要启动任何数据库服务**。
+需要 **macOS 14+、Xcode 16+ / Swift 6**，支持 Apple Silicon 与 Intel。没有第三方运行时依赖。
 
 ```bash
-cd backend
-cp .env.example .env
-# 填好 WMIND_JWT_SECRET（必须 ≥ 32 字节）：
-#   openssl rand -base64 48
-go run ./cmd/server
+./script/build_and_run.sh
 ```
 
-服务监听 `:8080`。验证：
+脚本编译并生成 `dist/pmind.app`，使用本地开发签名后启动。也可以在 Xcode 打开根目录 `Package.swift` 查看和调试代码；通过脚本启动可确保文档类型及应用 Bundle 信息完整。
 
 ```bash
-curl -s http://localhost:8080/api/v1/health/ready
-# {"data":{"checks":{},"status":"ok"},"requestId":"01J..."}
+swift test                           # 内核 + macOS 原生会话测试
+./script/build_and_run.sh --build-only # 仅构建 .app
+./script/build_and_run.sh --debug      # LLDB
+./script/build_and_run.sh --logs       # 系统日志
 ```
 
-改用 PostgreSQL 只需两个环境变量，代码与其它配置完全不变：
+Codex 的 Run 按钮调用相同的构建启动脚本。开发签名不等于正式签名和公证，当前没有已发布的安装包。
 
-```bash
-WMIND_DB_DRIVER=postgres \
-WMIND_DATABASE_URL='postgres://wmind:wmind@localhost:5432/wmind?sslmode=disable' \
-go run ./cmd/server
-```
+## 开始编辑
 
-### 前端（本地开发）
+打开应用会创建一份示例导图。双击主题修改标题；画布有焦点时 **Tab** 添加子主题，**Return** 添加同级主题，**Delete** 删除非中心主题。文字输入时使用原生编辑行为，**Shift Return** 插入换行。
 
-```bash
-cd frontend
-pnpm install
-pnpm dev            # http://127.0.0.1:5173
-```
+拖到主题中央可成为其子主题，拖到主题上/下缘可插入相邻位置。方向键浏览主题；触控板双指滚动平移、捏合缩放，也可按空格拖动或用鼠标中键平移。工具栏分别提供同级和子主题按钮。
 
-Vite 开发服务器把 `/api` 代理到 `http://127.0.0.1:8080`，浏览器里是同源请求，不受 CORS 限制。
+使用 **⌘S** 保存、**⇧⌘S** 另存为、**⌘Z / ⇧⌘Z** 撤销重做。文件菜单支持打开 Markdown，并通过“导出”保存 Markdown、PNG 或 PDF。Markdown 包含完整树；图片和 PDF 反映当前折叠状态。
 
-### 首次登录
+## 重构与验证状态
 
-`users` 表为空时，后端用 `WMIND_ADMIN_EMAIL` / `WMIND_ADMIN_PASSWORD` 创建第一个管理员（示例值 `admin@wmind.local` / `change-me-please`）。**登录后请立刻在「个人设置 → 修改密码」改掉**，生产环境不要沿用示例值。
+当前工程已经替换原 Go/React 网站。首版聚焦核心编辑，不包含在线分享、AI、账号、管理后台、概要、联系线、附件、多画布或 XMind 支持。旧 `.wmind` 不直接兼容，迁移方法见 [迁移说明](docs/migration.md)。
 
-管理员登录后侧栏会出现「管理概览 / 用户管理 / 网站设置」。一期没有自助找回密码：由管理员在「用户管理」里重置，新密码**只显示一次**。
+当前 Linux 工作区已执行并通过 24 项 Swift 内核测试；macOS 应用编译、4 项原生测试和界面验收尚未在这里执行。仓库提供 macOS CI 与 [验收清单](docs/validation.md)，不能将其配置完成视为验证通过。
 
-### 部署
-
-```bash
-cd deploy
-cp .env.example .env          # 填好 WMIND_JWT_SECRET
-docker compose pull           # 拉取发布镜像（私有包需先 docker login ghcr.io）
-docker compose up -d --no-build # 默认 SQLite，两个容器
-```
-
-需要 PostgreSQL 时换一套编排：
-
-```bash
-docker compose -f docker-compose.postgres.yml pull
-docker compose -f docker-compose.postgres.yml up -d --no-build
-```
-
-> 本项目 SQLite 形态为单 API 实例，数据库卷必须使用本地存储；PostgreSQL 形态可扩展 API 实例。切换数据库驱动不会迁移现有数据。
-
-## 开发与发布
-
-版本发布、常用命令、目录结构、数据库方言与开发约定见[开发指南](./docs/development.md)。
-
-## 许可
-
-[MIT](./LICENSE)
-
-## 社区
-
-[Linux DO](https://linux.do/)
+开发结构见 [开发说明](docs/development.md)。原网站截图保留在 `docs/screenshots`，仅供历史参考，并非新版界面。许可证为 [MIT](LICENSE)。

@@ -2,6 +2,8 @@
 
 Status: implemented
 
+> 历史适用范围：本文记录旧 Web 实现，仅保留可复用的树约束、布局和文本导入理由；当前 Swift 实现以[原生架构](2026-11-07-pmind-native-macos.md)为准。
+
 ## Problem
 
 M2.2 要给出「文档 → 几何」这一步：文本折行与测量、`mindmap` 结构的左右平衡布局。docs/05 §4.3/§4.4 给了接口与常量，但有几处必须自己定：
@@ -71,7 +73,7 @@ Map 的插入顺序天然是 LRU 顺序：命中后 `delete` 再 `set` 挪到队
 - 布局结果完全可预测：同一份文档 + 同一套常量 = 同一份坐标，方便截图对比与回归。
 - 比 d3 的轮廓合并松 10%~20%，长分支多时右侧会偏长。等 M3 有真实导图对比再评估是否值得换。
 - 测量缓存与样式缓存（`resolveStyle`）都是模块级、有上限的；长时间编辑不会无限增长。
-- 标记在 `measureTopic` 参与内容宽高测量，固定窄宽时换行，所有结构沿用新的主题尺寸；具体内容定位契约见[主题 Marker](../../implemented/feature/2026-10-23-wmind-topic-markers.md)。附加内容行和媒体由[主题内容模型](2026-10-23-wmind-topic-content-model.md)测量，包含备注入口。
+- 标记在 `measureTopic` 参与内容宽高测量，固定窄宽时换行，所有结构沿用新的主题尺寸；具体内容定位契约见[主题 Marker](../../archived/feature/2026-10-23-wmind-topic-markers.md)。附加内容行和媒体由[主题内容模型](../../archived/architecture/2026-10-23-wmind-topic-content-model.md)测量，包含备注入口。
 
 ## Alternatives considered
 

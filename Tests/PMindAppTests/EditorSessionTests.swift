@@ -23,6 +23,7 @@ struct EditorSessionTests {
         undo.undo()
         #expect(box.file.map == before)
         #expect(session.selection == before.root.id)
+        #expect(session.editingRequest == nil)
         undo.redo()
         #expect(box.file.map.root.children.first?.id == selected)
         #expect(session.selection == selected)

@@ -19,6 +19,12 @@ final class MapCanvasView: NSView, NSTextFieldDelegate {
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
 
+    override func resignFirstResponder() -> Bool {
+        spaceHeld = false; panning = false; dragging = false; pressedID = nil; drop = nil
+        NSCursor.arrow.set()
+        return super.resignFirstResponder()
+    }
+
     init(session: EditorSession, map: MindMap) {
         self.session = session; self.map = map
         geometry = MapRenderer.canvasGeometry(map)
@@ -98,6 +104,15 @@ final class MapCanvasView: NSView, NSTextFieldDelegate {
         panning = spaceHeld || event.buttonNumber == 2
         pressedID = panning ? nil : geometry.hitTest(pressPoint)
         dragging = false; drop = nil
+        if !panning, let folded = geometry.topics.first(where: { node in
+            guard map.root.topic(node.id)?.isCollapsed == true else { return false }
+            let badge = CGRect(x: node.left ? node.frame.minX - 8 : node.frame.maxX - 8,
+                               y: node.frame.midY - 8, width: 16, height: 16)
+            return badge.contains(pressPoint)
+        }) {
+            session?.select(folded.id); session?.fold(); pressedID = nil
+            return
+        }
         if let id = pressedID {
             session?.select(id)
             if event.clickCount == 2 { beginEditing(id) }
@@ -183,10 +198,13 @@ final class MapCanvasView: NSView, NSTextFieldDelegate {
     override func menu(for event: NSEvent) -> NSMenu? {
         if let id = geometry.hitTest(convert(event.locationInWindow, from: nil)) { session?.select(id) }
         let menu = NSMenu()
+        menu.autoenablesItems = false
         for (title, action) in [("添加子主题", #selector(addChild(_:))), ("编辑标题", #selector(rename(_:))),
                                 ("折叠 / 展开", #selector(toggleFold(_:))), ("复制主题", #selector(copy(_:))),
                                 ("粘贴主题", #selector(paste(_:))), ("删除主题", #selector(removeTopic(_:)))] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            if action == #selector(removeTopic(_:)) { item.isEnabled = session?.canDelete == true }
+            if action == #selector(toggleFold(_:)) { item.isEnabled = session?.selectedTopic?.children.isEmpty == false }
             item.target = self; menu.addItem(item)
         }
         return menu
