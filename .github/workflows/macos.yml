@@ -9,6 +9,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Toolchain
         run: swift --version
+      - name: Safe app launch script tests
+        run: bash script/tests/build_and_run_tests.sh
       - name: Core and native session tests
         run: swift test
       - name: Build development app bundle
@@ -30,3 +32,5 @@ jobs:
         with:
           node-version: '24'
       - run: npm run verify-notes
+      - name: Safe app launch script tests
+        run: bash script/tests/build_and_run_tests.sh

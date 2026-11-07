@@ -33,7 +33,9 @@ Markdown 是文本交换格式，不保存 UUID、颜色、折叠或布局。支
 
 ## 构建与测试
 
-Mac：`swift test`，然后 `./script/build_and_run.sh --verify`。`--verify` 只验证进程存在，交互仍按验收清单检查。`--debug` 在 LLDB 中运行应用二进制；`--logs` 观察进程日志；`--telemetry` 过滤 `app.pmind.mac` 子系统。日志不记录标题、备注或文件内容。
+Mac：`swift test`，然后 `./script/build_and_run.sh --verify`。脚本先在独立暂存目录构建、打包和签名，再通过系统 AppleScript 请求旧应用正常退出；取消或超时就保留原应用，退出后才替换 Bundle。替换失败会恢复旧 Bundle，恢复失败则保留暂存副本。`--build-only` 遇到运行中的应用会停止替换且不请求退出。`--verify` 只验证进程存在，交互仍按验收清单检查。`--debug` 在 LLDB 中运行应用二进制；`--logs` 观察进程日志；`--telemetry` 过滤 `app.pmind.mac` 子系统。日志不记录标题、备注或文件内容。
+
+`bash script/tests/build_and_run_tests.sh` 使用模拟命令和临时 Bundle 检查构建失败、退出取消/超时、仅构建、正常安装和安装/恢复失败；不启动或终止真实应用。Linux/macOS CI 都运行这 8 个用例。真正的系统未保存提示与退出取消仍需在 Mac 上按验收清单检查。
 
 Linux 云环境：运行 `./script/setup_linux.sh` 安装经过发布签名验证的 Swift 6.1.3，再运行 `./script/test.sh`。脚本使用 `/workspace/.pmind-native-tools`，可通过 `PMIND_TOOLS_DIR` 指定其他可写目录。工具链没有系统安装步骤。应用目标和原生测试目标在 Linux 不注册，因此测试通过只说明内核通过。测试脚本将 Swift/Clang 缓存指向工具目录，无需改变 HOME。
 

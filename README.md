@@ -20,6 +20,8 @@
 
 脚本编译并生成 `dist/pmind.app`，使用本地开发签名后启动。也可以在 Xcode 打开根目录 `Package.swift` 查看和调试代码；通过脚本启动可确保文档类型及应用 Bundle 信息完整。
 
+已有应用运行时，脚本在新构建准备完成后正常请求退出，让系统处理未保存内容；取消退出会停止替换和启动。`--build-only` 不会退出正在运行的应用，此时请先保存并关闭应用再构建。
+
 ```bash
 swift test                           # 内核 + macOS 原生会话测试
 ./script/build_and_run.sh --build-only # 仅构建 .app
@@ -41,6 +43,6 @@ Codex 的 Run 按钮调用相同的构建启动脚本。开发签名不等于正
 
 当前工程已经替换原 Go/React 网站。首版聚焦核心编辑，不包含在线分享、AI、账号、管理后台、概要、联系线、附件、多画布或 XMind 支持。旧 `.wmind` 不直接兼容，迁移方法见 [迁移说明](docs/migration.md)。
 
-当前 Linux 工作区已执行并通过 24 项 Swift 内核测试；macOS 应用编译、4 项原生测试和界面验收尚未在这里执行。仓库提供 macOS CI 与 [验收清单](docs/validation.md)，不能将其配置完成视为验证通过。
+当前 Linux 工作区已执行并通过 31 项 Swift 内核测试和 8 个启动脚本模拟用例；macOS 应用编译、8 项原生测试和界面验收尚未在这里执行。仓库提供 macOS CI 与 [验收清单](docs/validation.md)，不能将其配置完成视为验证通过。
 
 开发结构见 [开发说明](docs/development.md)。原网站截图保留在 `docs/screenshots`，仅供历史参考，并非新版界面。许可证为 [MIT](LICENSE)。
