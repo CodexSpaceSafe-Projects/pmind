@@ -54,7 +54,7 @@ enum MapRenderer {
 
     static func measure(_ title: String, _ root: Bool) -> CGSize {
         let bounds = (title as NSString).boundingRect(
-            with: CGSize(width: 240, height: .greatestFiniteMagnitude),
+            with: CGSize(width: 240, height: CGFloat.greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: attributes(root: root)
         )
         return CGSize(width: ceil(bounds.width), height: ceil(bounds.height))
