@@ -123,7 +123,7 @@ struct EditorSessionTests {
         session.titleEditor = editor
         let before = box.file.map
         session.editingRequest = session.selection
-        undo.beginUndoGrouping(); session.addChild(); undo.endUndoGrouping()
+        session.addChild()
         #expect(box.file.map == before)
         #expect(session.editingRequest == before.root.id)
         #expect(!undo.canUndo)
