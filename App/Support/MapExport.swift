@@ -7,6 +7,7 @@ enum MapExport {
     enum Format { case markdown, png, pdf }
     static func save(_ session: EditorSession, format: Format) {
         // Commit any field-editor changes before taking the export snapshot.
+        guard session.commitEditing() else { return }
         NSApp.keyWindow?.makeFirstResponder(nil)
         let panel = NSSavePanel()
         let ext: String

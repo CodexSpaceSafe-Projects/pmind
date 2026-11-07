@@ -26,10 +26,12 @@ struct EditorCommands: Commands {
         }
         CommandGroup(replacing: .saveItem) {
             Button("保存") {
+                guard let session, session.commitEditing() else { return }
                 NSApp.keyWindow?.makeFirstResponder(nil)
                 NSApp.sendAction(#selector(NSDocument.save(_:)), to: nil, from: nil)
             }.keyboardShortcut("s").disabled(session == nil)
             Button("另存为…") {
+                guard let session, session.commitEditing() else { return }
                 NSApp.keyWindow?.makeFirstResponder(nil)
                 NSApp.sendAction(#selector(NSDocument.saveAs(_:)), to: nil, from: nil)
             }.keyboardShortcut("s", modifiers: [.command, .shift]).disabled(session == nil)

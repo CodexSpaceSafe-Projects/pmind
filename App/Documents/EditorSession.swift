@@ -5,12 +5,18 @@ import OSLog
 
 enum ViewportAction { case fit, center, zoomIn, zoomOut, reveal(UUID) }
 
+@MainActor
+protocol TitleEditing: AnyObject {
+    func commitTitleEditing() -> Bool
+}
+
 /// One instance per document window. Document data lives only in the FileDocument binding.
 @MainActor
 final class EditorSession: ObservableObject {
     private let logger = Logger(subsystem: "app.pmind.mac", category: "Commands")
     private var file: Binding<MindMapFile>
     weak var undoManager: UndoManager?
+    weak var titleEditor: (any TitleEditing)?
     @Published var selection: UUID
     @Published var editingRequest: UUID?
     @Published var viewportRequest: UUID = UUID()
@@ -27,17 +33,21 @@ final class EditorSession: ObservableObject {
     var canDelete: Bool { selection != map.root.id && selectedTopic != nil }
     var matches: [UUID] { map.search(query) }
 
-    func perform(_ command: MapCommand, label: String) {
+    @discardableResult
+    func perform(_ command: MapCommand, label: String) -> Bool {
+        guard commitEditing() else { return false }
         do {
             var next = map
-            guard let result = try next.apply(command) else { return }
+            guard let result = try next.apply(command) else { return true }
             replace(next, selection: result.selection, label: label)
             logger.debug("Document command completed")
             if result.startsEditing { editingRequest = result.selection }
             request(.reveal(result.selection))
+            return true
         } catch {
             logger.error("Document command rejected")
             self.error = error.localizedDescription
+            return false
         }
     }
 
@@ -54,7 +64,7 @@ final class EditorSession: ObservableObject {
     }
 
     func select(_ id: UUID, reveal: Bool = false) {
-        guard map.root.topic(id) != nil else { return }
+        guard map.root.topic(id) != nil, commitEditing() else { return }
         if NSApp.keyWindow?.firstResponder is NSTextView { NSApp.keyWindow?.makeFirstResponder(nil) }
         editingRequest = nil
         if reveal {
@@ -66,7 +76,9 @@ final class EditorSession: ObservableObject {
     }
 
     func request(_ action: ViewportAction) { viewportAction = action; viewportRequest = UUID() }
+    func commitEditing() -> Bool { titleEditor?.commitTitleEditing() ?? true }
     func edit() {
+        guard commitEditing() else { return }
         NSApp.keyWindow?.makeFirstResponder(nil)
         editingRequest = selection
     }
@@ -76,7 +88,7 @@ final class EditorSession: ObservableObject {
     func fold() { perform(.toggleFold(selection), label: "折叠或展开") }
 
     func copyTopic() {
-        guard let topic = selectedTopic else { return }
+        guard commitEditing(), let topic = selectedTopic else { return }
         do {
             let map = MindMap(root: topic)
             let data = try DocumentCodec.encode(map)
@@ -88,6 +100,7 @@ final class EditorSession: ObservableObject {
     }
 
     func pasteTopic() {
+        guard commitEditing() else { return }
         do {
             let board = NSPasteboard.general
             let source: Topic

@@ -2,7 +2,7 @@ import AppKit
 import MindMapCore
 
 @MainActor
-final class MapCanvasView: NSView, NSTextFieldDelegate {
+final class MapCanvasView: NSView, NSTextFieldDelegate, TitleEditing {
     weak var session: EditorSession?
     private(set) var map: MindMap
     private(set) var geometry: MapGeometry
@@ -29,6 +29,7 @@ final class MapCanvasView: NSView, NSTextFieldDelegate {
         self.session = session; self.map = map
         geometry = MapRenderer.canvasGeometry(map)
         super.init(frame: CGRect(origin: .zero, size: geometry.size))
+        session.titleEditor = self
         setAccessibilityElement(true)
         setAccessibilityRole(.group)
         setAccessibilityLabel("思维导图画布")
@@ -98,7 +99,7 @@ final class MapCanvasView: NSView, NSTextFieldDelegate {
     }
 
     override func mouseDown(with event: NSEvent) {
-        if field != nil { finishEditing() }
+        guard finishEditing() else { return }
         window?.makeFirstResponder(self)
         pressPoint = convert(event.locationInWindow, from: nil)
         panning = spaceHeld || event.buttonNumber == 2
@@ -212,8 +213,10 @@ final class MapCanvasView: NSView, NSTextFieldDelegate {
 }
 
 extension MapCanvasView {
-    func beginEditing(_ id: UUID) {
-        guard let node = geometry.topic(id), let topic = map.root.topic(id), field == nil else { return }
+    @discardableResult
+    func beginEditing(_ id: UUID) -> Bool {
+        if field != nil { return editingID == id }
+        guard let node = geometry.topic(id), let topic = map.root.topic(id) else { return false }
         let input = NSTextField(frame: node.frame.insetBy(dx: 8, dy: 4))
         input.stringValue = topic.title; input.font = MapRenderer.font(root: node.depth == 0)
         input.alignment = .center; input.isBordered = false; input.drawsBackground = true
@@ -223,9 +226,11 @@ extension MapCanvasView {
         field = input; editingID = id; addSubview(input)
         _ = scrollToVisible(input.frame.insetBy(dx: -20, dy: -20))
         window?.makeFirstResponder(input); input.selectText(nil)
+        return true
     }
 
     func controlTextDidEndEditing(_ obj: Notification) { finishEditing() }
+    func commitTitleEditing() -> Bool { finishEditing() }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         if commandSelector == #selector(NSResponder.cancelOperation(_:)) { cancelEditing(); return true }
@@ -235,16 +240,26 @@ extension MapCanvasView {
             } else { finishEditing() }
             return true
         }
-        if commandSelector == #selector(NSResponder.insertTab(_:)) { finishEditing(); session?.addChild(); return true }
+        if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            if finishEditing() { session?.addChild() }
+            return true
+        }
         return false
     }
 
-    private func finishEditing() {
-        guard let field, let id = editingID else { return }
-        let text = field.stringValue
-        self.field = nil; editingID = nil; field.delegate = nil; field.removeFromSuperview()
+    @discardableResult
+    private func finishEditing() -> Bool {
+        guard let field, let id = editingID else { return true }
+        let text = field.currentEditor()?.string ?? field.stringValue
+        // Detach the pending edit before applying the rename, which uses the same command path.
+        self.field = nil; editingID = nil
+        if session?.perform(.rename(id, text), label: "编辑标题") == false {
+            self.field = field; editingID = id
+            return false
+        }
+        field.delegate = nil; field.removeFromSuperview()
         window?.makeFirstResponder(self)
-        session?.perform(.rename(id, text), label: "编辑标题")
+        return true
     }
 
     private func cancelEditing() {

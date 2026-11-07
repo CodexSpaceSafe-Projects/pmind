@@ -30,8 +30,9 @@ struct MapCanvas: NSViewRepresentable {
         if let id = session.editingRequest {
             DispatchQueue.main.async { [weak canvas, weak session] in
                 guard session?.editingRequest == id else { return }
-                canvas?.beginEditing(id)
-                session?.editingRequest = nil
+                if canvas?.beginEditing(id) == true, session?.editingRequest == id {
+                    session?.editingRequest = nil
+                }
             }
         }
         canvas.needsDisplay = true
