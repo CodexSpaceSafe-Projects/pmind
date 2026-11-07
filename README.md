@@ -29,7 +29,9 @@ swift test                           # 内核 + macOS 原生会话测试
 ./script/build_and_run.sh --logs       # 系统日志
 ```
 
-Codex 的 Run 按钮调用相同的构建启动脚本。开发签名不等于正式签名和公证，当前没有已发布的安装包。
+Codex 的 Run 按钮调用相同的构建启动脚本。开发签名不等于正式签名和公证，当前没有正式发布的安装包。
+
+提交到 `main` 或向 `main` 提交 Pull Request 时，[GitHub Actions](https://github.com/CodexSpaceSafe-Projects/pmind/actions/workflows/macos.yml) 自动测试并分别构建 Apple Silicon（`arm64`）和 Intel（`x86_64`）版本，也支持在 Actions 页面使用 **Run workflow** 手动构建。成功运行的 **Artifacts** 提供 `pmind-macos-arm64` 和 `pmind-macos-x86_64`，保留 14 天；下载适合自己 Mac 的产物，再解压其中的 `.zip` 即可得到 `pmind.app`。同时提供 SHA-256 校验文件。这些是开发签名构建，尚未公证。
 
 ## 开始编辑
 

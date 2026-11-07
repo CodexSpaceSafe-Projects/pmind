@@ -38,4 +38,4 @@
 
 ## 尚未提供
 
-完整自动化 GUI 测试、正式签名/公证、Universal 安装包和发布渠道。macOS CI 只配置了测试、编译及产物检查，未在本地执行或触发远端工作流。
+完整自动化 GUI 测试、正式签名/公证、Universal 安装包和正式发布渠道。macOS CI 分别测试、构建和打包 arm64/x86_64 开发产物，具体提交是否通过以 [Actions 运行结果](https://github.com/CodexSpaceSafe-Projects/pmind/actions/workflows/macos.yml) 为准。Linux 本地检查不能替代这些 Mac 作业；CI 构建通过也不代表完成以上人工交互验收。

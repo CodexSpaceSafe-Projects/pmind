@@ -62,6 +62,10 @@ Markdown 与原生格式共享 `DocumentCodec.maxTopics/maxDepth`。解析时允
 
 构建和签名使用独立暂存 Bundle，完成前不终止旧进程，也不修改运行中的 Bundle。安装阶段通过 AppleScript 请求正常退出，NSApplication/NSDocument 处理未保存内容；用户取消或进程仍在运行就中止。仅构建模式不退出应用。旧 Bundle 暂存到本次构建目录，安装失败时恢复；若恢复仍失败，清理逻辑保留副本并报告路径，不删除唯一旧副本。AppleScript、签名与打包工具均来自 macOS，不新增第三方运行库。
 
+Actions 在 main push、面向 main 的 PR 及 workflow_dispatch 时分别使用官方 `macos-15`（arm64）与 `macos-15-intel`（x86_64）runner；执行架构断言、全部 Swift 测试、启动脚本回归和 Bundle 构建。每个架构用 ditto 生成 `.app.zip` 和 SHA-256，并解压复查签名与执行位后上传为 14 天开发产物，避免 upload-artifact 直接保存目录会丢失可执行权限。流程只申请 contents 读取权限，同分支只保留最新运行；构建产物不等于正式 Release 或公证安装包。
+
+macOS Foundation 提供几何类型声明，但 Swift 的 CGRect/CGPoint/CGSize 扩展需要显式导入 CoreGraphics。内核几何代码和布局测试以 canImport 条件导入该系统模块，保留 Linux Foundation 几何实现。上一次远端 macOS 构建已用实际编译错误复现这个跨平台导入问题；Linux 通过不能排除 Mac 缺少 overlay。
+
 ### 历史笔记审计
 
 按原生技术、文档、布局、内核和导入导出检索了 proposed、implemented 和 rejected。尚无原生 Swift/macOS 方案，本次是架构方向变更，不能原地改写 Web 架构的决定。
@@ -89,6 +93,8 @@ Markdown 与原生格式共享 `DocumentCodec.maxTopics/maxDepth`。解析时允
 
 **构建成功后直接 pkill 再覆盖 Bundle。** 流程更短，但仍绕过文档关闭与取消；先原地打包再请求退出，也会提前改动运行中的可执行文件。暂存完整签名结果后再正常退出，能让构建失败和用户取消都保留原应用，代价是短暂占用两份 Bundle 的磁盘空间。
 
+**只保留单架构构建，并直接上传 `.app` 目录。** 配置最短，但无法验证两种 Mac 架构，且 artifact 下载会重置文件权限。分架构 ZIP 避免额外的交叉链接和 Universal 合并流程，能保持开发 Bundle 的签名与执行位；代价是下载者需要选择对应架构。
+
 ## Verification scope
 
 - Mac 上通过 Xcode 构建并启动应用；离线可用，无需 Go、Node、Docker、账号或网络服务。
@@ -108,6 +114,8 @@ Markdown 与原生格式共享 `DocumentCodec.maxTopics/maxDepth`。解析时允
 - 单文件树模型和简单布局的成本更低，但大文档和中文文本测量仍须实测。若 1000 节点场景不满足交互验收，优先定位绘制/命中热点后再考虑空间索引或分块渲染。
 
 ### 当前验证结果
+
+Actions YAML 和其中的 Bash 步骤在 Linux 解析检查；实际 macOS 构建结果按每次远端运行记录确认。原始提交 b6103e9 的 [macOS 作业](https://github.com/CodexSpaceSafe-Projects/pmind/actions/runs/42353550567) 在几何类型 Equatable 和 CGRect 扩展处编译失败，当前条件导入针对该错误；后续运行仍需检查完整原生目标与归档步骤。
 
 `DocumentTests.compactDeepDocumentRemainsSaveableAndEditable` 先复现打开成功但保存抛出 `tooLarge`，修复后验证保存、重开和改名；旧带缩进文档的回归仍保留完整内容。相关 7 项文档测试在 Linux 执行；不替代 macOS 系统文档验证。
 

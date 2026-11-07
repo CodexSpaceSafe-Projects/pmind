@@ -44,3 +44,5 @@ Linux 云环境：运行 `./script/setup_linux.sh` 安装经过发布签名验�
 ## 分发
 
 当前脚本生成本机架构的开发构建。Apple Silicon 和 Intel 需分别在对应 Mac 构建。对外发布需另外设置 Developer ID 签名、hardened runtime、公证和安装包流程；不要把 ad-hoc 开发签名作为正式分发就绪证明。
+
+`.github/workflows/macos.yml` 在 main push、面向 main 的 PR 和手动触发时运行。矩阵明确使用 `macos-15`（arm64）及 `macos-15-intel`（x86_64），先验证实际架构，再执行 Swift 测试和构建脚本。`ditto` 将 `.app` 封装为带父目录和资源元数据的 ZIP，上传前解压检查执行位与签名，避免直接上传目录导致下载产物丢失执行权限。产物含 SHA-256，保留 14 天。并发更新会取消同分支旧构建；工作流只申请 contents 读取权限，不创建 Release 或标签。

@@ -1,14 +1,40 @@
 name: macOS
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   native:
-    runs-on: macos-15
+    name: Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    env:
+      BUILD_ARCH: ${{ matrix.arch }}
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
-        run: swift --version
+        run: |
+          xcodebuild -version
+          swift --version
+          test "$(uname -m)" = "$BUILD_ARCH"
       - name: Safe app launch script tests
         run: bash script/tests/build_and_run_tests.sh
       - name: Core and native session tests
@@ -20,12 +46,36 @@ jobs:
           plutil -lint dist/pmind.app/Contents/Info.plist
           codesign --verify --strict dist/pmind.app
           test -x dist/pmind.app/Contents/MacOS/pmind
+          lipo -verify_arch "$BUILD_ARCH" dist/pmind.app/Contents/MacOS/pmind
+      - name: Archive app with executable permissions
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent dist/pmind.app "dist/pmind-macos-$BUILD_ARCH.zip"
+          cd dist
+          shasum -a 256 "pmind-macos-$BUILD_ARCH.zip" > "pmind-macos-$BUILD_ARCH.zip.sha256"
+      - name: Validate archived app
+        run: |
+          ditto -x -k "dist/pmind-macos-$BUILD_ARCH.zip" "$RUNNER_TEMP/pmind-archive"
+          test -x "$RUNNER_TEMP/pmind-archive/pmind.app/Contents/MacOS/pmind"
+          codesign --verify --strict "$RUNNER_TEMP/pmind-archive/pmind.app"
       - uses: actions/upload-artifact@v4
         with:
-          name: pmind-macos-development
-          path: dist/pmind.app
+          name: pmind-macos-${{ matrix.arch }}
+          path: |
+            dist/pmind-macos-${{ matrix.arch }}.zip
+            dist/pmind-macos-${{ matrix.arch }}.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build summary
+        run: |
+          {
+            echo "Architecture: $BUILD_ARCH"
+            echo "Artifact: pmind-macos-$BUILD_ARCH"
+            echo 'Development signing only; this build is not notarized.'
+          } >> "$GITHUB_STEP_SUMMARY"
   notes:
+    name: Repository checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
