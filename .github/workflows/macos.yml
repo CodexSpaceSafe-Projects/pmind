@@ -84,3 +84,24 @@ jobs:
       - run: npm run verify-notes
       - name: Safe app launch script tests
         run: bash script/tests/build_and_run_tests.sh
+      - name: Release publishing script tests
+        run: bash script/tests/publish_release_tests.sh
+  release:
+    name: Publish development release
+    needs: [native, notes]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pmind-macos-*
+          path: release
+          merge-multiple: true
+      - name: Publish tested app archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash script/publish_release.sh release

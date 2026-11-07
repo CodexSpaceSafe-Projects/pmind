@@ -62,7 +62,7 @@ Markdown 与原生格式共享 `DocumentCodec.maxTopics/maxDepth`。解析时允
 
 构建和签名使用独立暂存 Bundle，完成前不终止旧进程，也不修改运行中的 Bundle。安装阶段通过 AppleScript 请求正常退出，NSApplication/NSDocument 处理未保存内容；用户取消或进程仍在运行就中止。仅构建模式不退出应用。旧 Bundle 暂存到本次构建目录，安装失败时恢复；若恢复仍失败，清理逻辑保留副本并报告路径，不删除唯一旧副本。AppleScript、签名与打包工具均来自 macOS，不新增第三方运行库。
 
-Actions 在 main push、面向 main 的 PR 及 workflow_dispatch 时分别使用官方 `macos-15`（arm64）与 `macos-15-intel`（x86_64）runner；执行架构断言、全部 Swift 测试、启动脚本回归和 Bundle 构建。每个架构用 ditto 生成 `.app.zip` 和 SHA-256，并解压复查签名与执行位后上传为 14 天开发产物，避免 upload-artifact 直接保存目录会丢失可执行权限。流程只申请 contents 读取权限，同分支只保留最新运行；构建产物不等于正式 Release 或公证安装包。
+Actions 在 main push、面向 main 的 PR 及 workflow_dispatch 时分别使用官方 `macos-15`（arm64）与 `macos-15-intel`（x86_64）runner；执行架构断言、全部 Swift 测试、启动脚本回归和 Bundle 构建。每个架构用 ditto 生成 `.app.zip` 和 SHA-256，并解压复查签名与执行位后上传为 14 天开发产物，避免 upload-artifact 直接保存目录会丢失可执行权限。构建与检查作业只申请 contents 读取权限，同分支只保留最新运行；构建产物不等于正式版本或公证安装包。用户后续要求的 [自动开发预发布](../process/2026-11-07-pmind-automatic-prereleases.md) 使用独立写权限作业扩展该构建流程，保留这里的本地应用和签名边界。
 
 macOS Foundation 提供几何类型声明，但 Swift 的 CGRect/CGPoint/CGSize 扩展需要显式导入 CoreGraphics。内核几何代码和布局测试以 canImport 条件导入该系统模块，保留 Linux Foundation 几何实现。上一次远端 macOS 构建已用实际编译错误复现这个跨平台导入问题；Linux 通过不能排除 Mac 缺少 overlay。
 

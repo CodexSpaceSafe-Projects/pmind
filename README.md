@@ -33,6 +33,8 @@ Codex 的 Run 按钮调用相同的构建启动脚本。开发签名不等于正
 
 提交到 `main` 或向 `main` 提交 Pull Request 时，[GitHub Actions](https://github.com/CodexSpaceSafe-Projects/pmind/actions/workflows/macos.yml) 自动测试并分别构建 Apple Silicon（`arm64`）和 Intel（`x86_64`）版本，也支持在 Actions 页面使用 **Run workflow** 手动构建。成功运行的 **Artifacts** 提供 `pmind-macos-arm64` 和 `pmind-macos-x86_64`，保留 14 天；下载适合自己 Mac 的产物，再解压其中的 `.zip` 即可得到 `pmind.app`。同时提供 SHA-256 校验文件。这些是开发签名构建，尚未公证。
 
+`main` 的自动或手动构建在全部检查通过后，还会发布到 [GitHub Releases](https://github.com/CodexSpaceSafe-Projects/pmind/releases)。每次构建生成独立的 `build-运行编号-提交短哈希` 开发预发布，包含两个架构的 ZIP 和 SHA-256。PR 不发布；历史版本保留，已公开的同一次构建不会被重跑覆盖。下载对应架构的 ZIP 解压即可使用，开发签名和未公证状态不变。
+
 ## 开始编辑
 
 打开应用会创建一份示例导图。双击主题修改标题；画布有焦点时 **Tab** 添加子主题，**Return** 添加同级主题，**Delete** 删除非中心主题。文字输入时使用原生编辑行为，**Shift Return** 插入换行。

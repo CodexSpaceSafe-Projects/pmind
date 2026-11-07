@@ -10,6 +10,7 @@
 - 7111 节点深树可打开、保存、重开并改名；10000 节点及深度 128 的 Markdown 往返与 Tab 文本保留通过。
 - 独立 Linux `swiftc -O` 基准中，10000 节点的旧折叠按钮扫描约 1.33 秒，新几何扫描平均约 0.007 毫秒/次（1000 次查询）；不包含 AppKit 事件、布局或绘制。
 - Linux 执行 GUI 构建入口时会明确提示需要 macOS，并以非零状态退出。
+- 9 个开发预发布模拟用例通过，覆盖分支/事件限制、产物完整性、精确提交、草稿恢复、已发布版本保护和上传失败不公开。
 
 这不是 macOS 应用编译或运行证明。下表全部需要在 Mac 上执行，尚未由当前 Linux 工作区验证。
 
@@ -38,4 +39,4 @@
 
 ## 尚未提供
 
-完整自动化 GUI 测试、正式签名/公证、Universal 安装包和正式发布渠道。macOS CI 分别测试、构建和打包 arm64/x86_64 开发产物，具体提交是否通过以 [Actions 运行结果](https://github.com/CodexSpaceSafe-Projects/pmind/actions/workflows/macos.yml) 为准。Linux 本地检查不能替代这些 Mac 作业；CI 构建通过也不代表完成以上人工交互验收。
+完整自动化 GUI 测试、正式签名/公证、Universal 安装包和稳定版发布。macOS CI 分别测试、构建和打包 arm64/x86_64 开发产物，成功的 main 运行还会自动创建 GitHub 开发预发布。具体提交是否通过以 [Actions 运行结果](https://github.com/CodexSpaceSafe-Projects/pmind/actions/workflows/macos.yml) 为准，下载入口见 [Releases](https://github.com/CodexSpaceSafe-Projects/pmind/releases)。Linux 本地检查不能替代这些 Mac 作业；CI 构建和发布通过也不代表完成以上人工交互验收。

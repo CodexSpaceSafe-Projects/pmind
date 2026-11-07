@@ -45,4 +45,6 @@ Linux 云环境：运行 `./script/setup_linux.sh` 安装经过发布签名验�
 
 当前脚本生成本机架构的开发构建。Apple Silicon 和 Intel 需分别在对应 Mac 构建。对外发布需另外设置 Developer ID 签名、hardened runtime、公证和安装包流程；不要把 ad-hoc 开发签名作为正式分发就绪证明。
 
-`.github/workflows/macos.yml` 在 main push、面向 main 的 PR 和手动触发时运行。矩阵明确使用 `macos-15`（arm64）及 `macos-15-intel`（x86_64），先验证实际架构，再执行 Swift 测试和构建脚本。`ditto` 将 `.app` 封装为带父目录和资源元数据的 ZIP，上传前解压检查执行位与签名，避免直接上传目录导致下载产物丢失执行权限。产物含 SHA-256，保留 14 天。并发更新会取消同分支旧构建；工作流只申请 contents 读取权限，不创建 Release 或标签。
+`.github/workflows/macos.yml` 在 main push、面向 main 的 PR 和手动触发时运行。矩阵明确使用 `macos-15`（arm64）及 `macos-15-intel`（x86_64），先验证实际架构，再执行 Swift 测试和构建脚本。`ditto` 将 `.app` 封装为带父目录和资源元数据的 ZIP，上传前解压检查执行位与签名，避免直接上传目录导致下载产物丢失执行权限。产物含 SHA-256，保留 14 天。并发更新会取消同分支旧构建；构建与检查作业仅申请 contents 读取权限。
+
+独立 `release` 作业依赖双架构构建和仓库检查，仅对 main 的 push/手动运行获取 contents 写权限。它下载当前运行的四个产物，执行 `script/publish_release.sh`，校验 SHA-256 后以精确提交创建 `build-<run_number>-<short_sha>` 标签和草稿，上传成功后公开为开发 prerelease。草稿支持重跑恢复，已公开版本不覆盖。`bash script/tests/publish_release_tests.sh` 的 9 个模拟用例在 Linux 仓库检查中执行。GitHub CLI 只在发布 runner 使用，不增加应用运行依赖。
