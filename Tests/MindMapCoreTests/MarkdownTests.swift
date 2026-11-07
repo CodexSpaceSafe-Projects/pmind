@@ -55,4 +55,46 @@ struct MarkdownTests {
         #expect(map.root.notes == "Introduction")
         #expect(map.root.children.map(\.title) == ["One", "Two"])
     }
+
+    @Test func roundTripsAtNativeNodeAndDepthLimits() throws {
+        let wide = MindMap(root: Topic(title: "root", children: (0..<9_999).map { Topic(title: "\($0)") }))
+        _ = try DocumentCodec.encode(wide)
+        let imported = try MarkdownCodec.decode(MarkdownCodec.encode(wide))
+        #expect(imported.root.count == wide.root.count)
+        #expect(imported.root.children.map(\.title) == wide.root.children.map(\.title))
+
+        var root = Topic(title: "leaf")
+        for _ in 0..<128 { root = Topic(title: "parent", children: [root]) }
+        let deep = MindMap(root: root)
+        _ = try DocumentCodec.encode(deep)
+        #expect(try MarkdownCodec.decode(MarkdownCodec.encode(deep)).root.count == 129)
+    }
+
+    @Test func rejectsLimitsExceededWithOrWithoutPromotedRoot() throws {
+        let items = (0..<10_000).map { "- \($0)" }.joined(separator: "\n")
+        #expect(throws: MapError.tooManyTopics) { try MarkdownCodec.decode("# Root\n" + items) }
+        #expect(throws: MapError.tooManyTopics) { try MarkdownCodec.decode(items) }
+
+        var root = Topic(title: "leaf")
+        for _ in 0..<128 { root = Topic(title: "parent", children: [root]) }
+        let text = MarkdownCodec.encode(MindMap(root: root))
+        #expect(throws: MapError.tooDeep) { try MarkdownCodec.decode("Introduction\n" + text) }
+        root = Topic(title: "extra", children: [root])
+        #expect(throws: MapError.tooDeep) { try MarkdownCodec.decode(MarkdownCodec.encode(MindMap(root: root))) }
+    }
+
+    @Test func preservesTabsInTitlesAndNotesWhileParsingIndentedLists() throws {
+        let map = MindMap(root: Topic(title: "\t中文\t标题\t", notes: "\tkey\tvalue\n    \t尾部\t", children: [
+            Topic(title: "\tchild\t", notes: "代码\t缩进", children: [Topic(title: "leaf")]),
+        ]))
+        let imported = try MarkdownCodec.decode(MarkdownCodec.encode(map))
+        #expect(imported.root.title == map.root.title)
+        #expect(imported.root.notes == map.root.notes)
+        #expect(imported.root.children[0].title == map.root.children[0].title)
+        #expect(imported.root.children[0].notes == map.root.children[0].notes)
+
+        let indented = try MarkdownCodec.decode("# Root\n- Parent\n\t- Child\ttext\n\t  > key\tvalue")
+        #expect(indented.root.children[0].children[0].title == "Child\ttext")
+        #expect(indented.root.children[0].children[0].notes == "key\tvalue")
+    }
 }

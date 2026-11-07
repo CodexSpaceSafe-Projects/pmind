@@ -18,6 +18,8 @@ public enum MapError: Error, LocalizedError, Equatable {
 
 public enum DocumentCodec {
     public static let maxBytes = 8 * 1024 * 1024
+    public static let maxDepth = 128
+    public static let maxTopics = 10_000
     private struct Envelope: Codable {
         let format: String
         let version: Int
@@ -28,9 +30,9 @@ public enum DocumentCodec {
     public static func validate(_ map: MindMap) throws {
         var seen = Set<UUID>()
         func visit(_ topic: Topic, depth: Int) throws {
-            guard depth <= 128 else { throw MapError.tooDeep }
+            guard depth <= maxDepth else { throw MapError.tooDeep }
             guard seen.insert(topic.id).inserted else { throw MapError.duplicateID }
-            guard seen.count <= 10_000 else { throw MapError.tooManyTopics }
+            guard seen.count <= maxTopics else { throw MapError.tooManyTopics }
             for child in topic.children { try visit(child, depth: depth + 1) }
         }
         try visit(map.root, depth: 0)

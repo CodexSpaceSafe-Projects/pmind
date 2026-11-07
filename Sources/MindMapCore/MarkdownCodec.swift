@@ -20,11 +20,12 @@ public enum MarkdownCodec {
         var lists: [(indent: Int, node: Draft)] = []
         var current = container
         var fence: (Character, Int)?
-        var count = 1
+        // The synthetic container may be removed after parsing; count real nodes here.
+        var count = 0
         for raw in text.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n") {
-            let expanded = raw.replacingOccurrences(of: "\t", with: "    ")
-            let line = String(expanded.drop(while: { $0 == " " }))
-            let indent = expanded.prefix(while: { $0 == " " }).count
+            let prefix = raw.prefix(while: { $0 == " " || $0 == "\t" })
+            let indent = prefix.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) }
+            let line = String(raw.dropFirst(prefix.count))
             let first = line.first
             let run = first.map { c in line.prefix(while: { $0 == c }).count } ?? 0
             if let open = fence {
@@ -53,8 +54,9 @@ public enum MarkdownCodec {
                 let note = line.hasPrefix("> ") ? String(line.dropFirst(2)) : (line == ">" ? "" : raw)
                 current.notes.append(note)
             }
-            guard count <= 10_000 else { throw MapError.tooManyTopics }
-            guard headings.count + lists.count <= 128 else { throw MapError.tooDeep }
+            guard count <= DocumentCodec.maxTopics else { throw MapError.tooManyTopics }
+            // Allow one temporary container level; validate the final tree below.
+            guard headings.count + lists.count <= DocumentCodec.maxDepth + 1 else { throw MapError.tooDeep }
         }
         let root = container.children.count == 1 && container.notes.isEmpty ? container.children[0] : container
         let map = MindMap(root: root.topic())
