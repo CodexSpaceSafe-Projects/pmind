@@ -46,7 +46,7 @@ jobs:
           plutil -lint dist/pmind.app/Contents/Info.plist
           codesign --verify --strict dist/pmind.app
           test -x dist/pmind.app/Contents/MacOS/pmind
-          lipo -verify_arch "$BUILD_ARCH" dist/pmind.app/Contents/MacOS/pmind
+          lipo dist/pmind.app/Contents/MacOS/pmind -verify_arch "$BUILD_ARCH"
       - name: Archive app with executable permissions
         run: |
           ditto -c -k --sequesterRsrc --keepParent dist/pmind.app "dist/pmind-macos-$BUILD_ARCH.zip"
