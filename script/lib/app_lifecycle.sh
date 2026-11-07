@@ -29,7 +29,7 @@ install_app_bundle() {
   fi
   if ! mv "$staged" "$destination"; then
     if [[ -e "$backup" ]]; then
-      mv "$backup" "$destination" || echo "无法恢复旧应用，请检查 $backup。" >&2
+      mv "$backup" "$destination" || echo "无法恢复旧应用，请检查 ${backup}。" >&2
     fi
     return 1
   fi
