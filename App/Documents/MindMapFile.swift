@@ -11,7 +11,7 @@ struct MindMapFile: FileDocument {
     static var writableContentTypes: [UTType] { [.pmind] }
     var map: MindMap
 
-    init(map: MindMap = .welcome) { self.map = map }
+    init(map: MindMap = MindMap()) { self.map = map }
 
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else { throw MapError.invalidFormat }

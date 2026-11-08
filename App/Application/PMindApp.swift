@@ -7,6 +7,12 @@ struct PMindApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     var body: some Scene {
+        Window("pmind", id: HomeView.windowID) {
+            HomeView()
+        }
+        .defaultSize(width: 880, height: 540)
+        .windowResizability(.contentMinSize)
+
         DocumentGroup(newDocument: MindMapFile()) { file in
             EditorView(file: file.$document)
         }

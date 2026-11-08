@@ -23,6 +23,8 @@
 
 `FileDocument` 的绑定保存持久数据，窗口会话只保存选区、搜索、缩放和编辑请求。打开两个窗口时会话与撤销记录隔离。编辑框使用 AppKit 字段编辑器处理中文输入法与原生删除/复制；窗口会话通过弱引用 `TitleEditing` 在命令、复制粘贴和保存/导出前提交自己的标题编辑，失败则中止后续操作并保留输入。新标题的编辑请求仅在输入框成功接管后消费。
 
+启动入口为第一个 SwiftUI Window 主界面，DocumentGroup 位于其后。`HomeView` 只持有最近文件和打开错误等界面状态，通过系统 newDocument/openDocument 进入文档场景；文件菜单用 openWindow 返回唯一主界面。不要在启动回调中自动打开文件面板或创建示例文档。
+
 布局接收文本测量函数，输出节点矩形、折叠按钮矩形及贝塞尔路径。画布绘制、命中和导出复用这份几何；折叠按钮命中只扫描已布局元数据，不逐节点回查主题树。生产文本通过系统字体实际测量；Linux 布局测试注入固定测量器，不宣称像素与 Mac 一致。PNG 以 2 倍像素输出，限制边长 16384 像素及总像素 6400 万；大型导图可使用 PDF 或折叠分支。
 
 ## 文件格式
@@ -46,5 +48,7 @@ Linux 云环境：运行 `./script/setup_linux.sh` 安装经过发布签名验�
 当前脚本生成本机架构的开发构建。Apple Silicon 和 Intel 需分别在对应 Mac 构建。对外发布需另外设置 Developer ID 签名、hardened runtime、公证和安装包流程；不要把 ad-hoc 开发签名作为正式分发就绪证明。
 
 `.github/workflows/macos.yml` 在 main push、面向 main 的 PR 和手动触发时运行。矩阵明确使用 `macos-15`（arm64）及 `macos-15-intel`（x86_64），先验证实际架构，再执行 Swift 测试和构建脚本。`ditto` 将 `.app` 封装为带父目录和资源元数据的 ZIP，上传前解压检查执行位与签名，避免直接上传目录导致下载产物丢失执行权限。产物含 SHA-256，保留 14 天。并发更新会取消同分支旧构建；构建与检查作业仅申请 contents 读取权限。
+
+Mac CI 还编译 `script/tests/home_startup_smoke.swift`，以 NSWorkspace 正常启动解压后的 `.app`，忽略旧窗口恢复状态以检查冷启动主界面；窗口列表必须只有一个标题为 pmind 的普通窗口，之后正常退出测试实例。该检查不代替文件选择、最近文件、菜单和保存恢复的人工交互验收。
 
 独立 `release` 作业依赖双架构构建和仓库检查，仅对 main 的 push/手动运行获取 contents 写权限。它下载当前运行的四个产物，执行 `script/publish_release.sh`，校验 SHA-256 后以精确提交创建 `build-<run_number>-<short_sha>` 标签和草稿，上传成功后公开为开发 prerelease。草稿支持重跑恢复，已公开版本不覆盖。`bash script/tests/publish_release_tests.sh` 的 9 个模拟用例在 Linux 仓库检查中执行。GitHub CLI 只在发布 runner 使用，不增加应用运行依赖。

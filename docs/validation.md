@@ -16,10 +16,13 @@
 
 ## Mac 上的必要检查
 
-先运行 `swift test`（31 项内核 + 8 项原生测试）和 `bash script/tests/build_and_run_tests.sh`，再运行 `./script/build_and_run.sh --verify`。
+先运行 `swift test`（31 项内核 + 9 项原生测试）和 `bash script/tests/build_and_run_tests.sh`，再运行 `./script/build_and_run.sh --verify`。Mac CI 另外运行打包产物的冷启动主窗口检查。
 
 | 操作 | 预期 |
 | --- | --- |
+| 从应用图标普通启动，关闭全部窗口后再次点击 Dock | 显示 pmind 主界面，不自动弹出打开文件面板 |
+| 主界面新建、打开、取消打开及选择最近文件 | 新建为空白导图；仅点击打开才显示文件面板；取消仍留在主界面；最近文件可打开，失效文件报错 |
+| 编辑中选择“文件 → 显示主界面”，或从 Finder 双击文件 | 主界面复用同一个窗口；已有文档不受影响；Finder 文件仍交给文档编辑窗口 |
 | 新建两个文档，分别编辑并撤销 | 内容、历史和选区互不影响 |
 | Tab/Return、工具栏添加子/同级主题 | 标题立即可编辑，中心主题没有同级/删除操作 |
 | 标题尚在编辑时用 ⌘Return / ⇧⌘Return 新增主题 | 先保留旧标题，再进入新主题编辑；撤销重做与窗口隔离正确 |
