@@ -6,6 +6,13 @@ import Foundation
 struct HomeStartupSmoke {
     @MainActor
     static func main() async {
+        let watchdog = Task.detached {
+            do { try await Task.sleep(nanoseconds: 45_000_000_000) }
+            catch { return }
+            FileHandle.standardError.write(Data("Startup smoke timed out waiting for the graphical application.\n".utf8))
+            exit(1)
+        }
+        defer { watchdog.cancel() }
         do {
             guard CommandLine.arguments.count == 2 else { throw failure("Expected the app bundle path") }
             let url = URL(fileURLWithPath: CommandLine.arguments[1]).standardizedFileURL
@@ -13,7 +20,9 @@ struct HomeStartupSmoke {
             configuration.activates = true
             configuration.createsNewApplicationInstance = true
             configuration.arguments = ["-ApplePersistenceIgnoreState", "YES"]
+            print("Launching app bundle through NSWorkspace.")
             let app = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+            print("Application launched with PID \(app.processIdentifier).")
             defer { app.terminate() }
 
             var windows: [[String: Any]] = []
